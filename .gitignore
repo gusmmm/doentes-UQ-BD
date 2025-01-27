@@ -37,3 +37,6 @@ data/*
 !data/pdf-originals/
 data/pdf-originals/*
 !data/pdf-originals/.gitkeep
+!data/md-from-pdf/
+data/md-from-pdf/*
+!data/md-from-pdf/.gitkeep
