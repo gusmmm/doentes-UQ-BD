@@ -33,10 +33,15 @@ wheels/
 .env
 
 # Project data
-data/*
 !data/pdf-originals/
 data/pdf-originals/*
 !data/pdf-originals/.gitkeep
 !data/md-from-pdf/
 data/md-from-pdf/*
 !data/md-from-pdf/.gitkeep
+!data/md-final/
+data/md-final/*
+!data/md-final/.gitkeep
+!data/md-merged/
+data/md-merged/*
+!data/md-merged/.gitkeep
