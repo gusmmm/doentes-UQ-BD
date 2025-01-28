@@ -83,8 +83,8 @@ def read_md_file(filename):
         return None
 
 agent = Agent(
-    model=model,
-    #'gemini-2.0-flash-exp',
+    #model=model,
+    'gemini-2.0-flash-exp',
     result_type=BurnData,
     system_prompt=f"""
     Using this burn classification context:
@@ -107,7 +107,7 @@ agent = Agent(
     3. Burn Mechanism:
        - Use exactly one mechanism from BurnMechanism enum
        - For explosion/gas incidents, use THERMAL_FLAME
-       - Include specific agent (e.g., "gas bottle") in etiologic_agent field
+       - Include specific agent (e.g., "gas") in etiologic_agent field
     
     Return data according to the BurnData model structure. For missing information:
     - Use empty list for burn_locations if none found

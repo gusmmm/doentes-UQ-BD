@@ -70,6 +70,8 @@ Values for each location:
 - Percentage: integer number (0-100)
 - If not specified: return "unspecified"
 
+If the patient has had skin havested from another body part, do not include that part as burned. It is a donor part (in PT: dador, doador, colhido, colheita)
+
 # how to classify circunferencial burns
 - burns can only be circumferential in this locations:
     - in a limb 
