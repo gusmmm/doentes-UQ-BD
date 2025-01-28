@@ -6,6 +6,7 @@ from enum import Enum
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+import traceback
 
 # Get project root directory (1 level up from test folder)
 project_root = Path(__file__).parent.parent
@@ -15,18 +16,17 @@ load_dotenv()
 with open(project_root / 'instructions' / 'burns-extraction.md', 'r') as f:
     BURN_CONTEXT = f.read()
 
-""" # connect to openrouter API
+ # connect to openrouter API
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 if not OPENROUTER_API_KEY:
     raise ValueError("OPENROUTER_API_KEY not found in environment variables")
 
 
 model = OpenAIModel(
-    'meta-llama/llama-3.3-70b-instruct',
-    #'google/gemini-flash-1.5-8b',   # or any other OpenRouter model
+    'openai/gpt-4o-mini',  # This model supports function calling through OpenRouter
     base_url='https://openrouter.ai/api/v1',
     api_key=OPENROUTER_API_KEY,
-) """
+)
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 if not GEMINI_API_KEY:
@@ -83,8 +83,8 @@ def read_md_file(filename):
         return None
 
 agent = Agent(
-    #model=model,
-    'gemini-2.0-flash-exp',
+    model=model,
+    #'gemini-2.0-flash-exp',
     result_type=BurnData,
     system_prompt=f"""
     Using this burn classification context:
@@ -92,24 +92,66 @@ agent = Agent(
     {BURN_CONTEXT}
     
     Extract burn injury information from Portuguese medical notes into structured data.
-    Each burn location should include both the body part,its burn depth and whether it is circumferential.
-    Return a separate burn location for each limb structure mentioned if there is laterality. If it is described as bilateral, return two locations.
-    Return data according to the BurnData model structure.
-    If information is not found, use empty lists or default values.
+    
+    Important rules:
+    1. Burn Locations:
+       - Each location must include body part, burn depth, laterality (if applicable), and whether it's circumferential
+       - For arms/legs: create separate entries for left/right if bilateral
+       - Circumferential burns only apply to limbs and torso
+       - Use exact depth classifications from BurnDepth enum (first-degree, second-degree-superficial, etc.)
+    
+    2. Total Body Surface Area:
+       - Extract the percentage from ASCQ or ASC value
+       - Remove any ~ or % symbols and convert to float
+    
+    3. Burn Mechanism:
+       - Use exactly one mechanism from BurnMechanism enum
+       - For explosion/gas incidents, use THERMAL_FLAME
+       - Include specific agent (e.g., "gas bottle") in etiologic_agent field
+    
+    Return data according to the BurnData model structure. For missing information:
+    - Use empty list for burn_locations if none found
+    - Use 0.0 for total_body_surface_area if not specified
+    - Use THERMAL_UNSPECIFIED for mechanism if unclear
+    - Use None for etiologic_agent if not mentioned
     """
 )
 
 def extract_burn_data(filename):
     """Extract burn data from markdown file"""
     md_content = read_md_file(filename)
-    if md_content:
-        try:
-            result = agent.run_sync(md_content)
-            return result.data if result else None
-        except Exception as e:
-            print(f"Extraction error: {str(e)}")
+    if not md_content:
+        print("Error: No content read from file")
+        return None
+
+    try:
+        print("Sending request to OpenRouter API...")
+        result = agent.run_sync(md_content)
+        
+        if not result:
+            print("Error: No result returned from agent")
             return None
-    return None
+            
+        if not result.data:
+            print("Error: No data in result")
+            return None
+            
+        # Validate the extracted data
+        burn_data = result.data
+        if not burn_data.burn_locations:
+            print("Warning: No burn locations extracted")
+        
+        print(f"Successfully extracted data with {len(burn_data.burn_locations)} burn locations")
+        return burn_data
+            
+    except Exception as e:
+        print(f"Extraction error: {str(e)}")
+        print("Full traceback:")
+        print(traceback.format_exc())
+        if "No endpoints found that support tool use" in str(e):
+            print("\nSuggestion: The selected model doesn't support function calling.")
+            print("Try using a different model like 'openai/gpt-3.5-turbo' or 'anthropic/claude-2'")
+        return None
 
 if __name__ == "__main__":
     
