@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field
+import re
+from pydantic import BaseModel, Field, validator, model_validator
 from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIModel
 from typing import Optional, List
@@ -23,7 +24,8 @@ if not OPENROUTER_API_KEY:
 
 
 model = OpenAIModel(
-    'openai/gpt-4o-mini',  # This model supports function calling through OpenRouter
+    #'openai/gpt-4o-mini',  # This model supports function calling through OpenRouter
+    'anthropic/claude-3.5-haiku-20241022:beta',
     base_url='https://openrouter.ai/api/v1',
     api_key=OPENROUTER_API_KEY,
 )
@@ -32,7 +34,41 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found in environment variables")
 
-class PatientData(BaseModel):   
+# add this glossary to the agent
+with open(project_root / 'instructions' / 'dicionario-PT.md', 'r') as f:
+    PT_GLOSSARY = f.read()
+
+# Load extraction instructions
+with open(project_root / 'instructions' / 'patient-extraction.md', 'r') as f:
+    PATIENT_CONTEXT = f.read()
+
+class PatientData(BaseModel):
+    id_patient: int = Field(description="Patient ID from filename")
+    gender: str | None = Field(default=None)
+    date_of_birth: str | None = Field(default=None)  # dd-mm-yyyy
+    process_number: int | None = Field(default=None)
+    full_name: str | None = Field(default=None)
+    location: str | None = Field(default=None)
+    date_of_admission_UQ: str | None = Field(default=None) # dd-mm-yyyy
+    origin: str | None = Field(default=None)
+    date_of_discharge: str | None = Field(default=None) # dd-mm-yyyy
+    # destination: str | None = Field(default=None)
+    
+    # @model_validator(mode='after')
+    # def validate_fields(self) -> 'PatientData':
+    #     if self.id_patient <= 0:
+    #         raise ValueError('Patient ID must be positive')
+    #     if self.process_number is not None and self.process_number <= 0:
+    #         raise ValueError('Process number must be positive')
+    #     return self
+
+# Define the tools/functions first
+def extract_patient_id(filename: str) -> int:
+    """Extract numeric ID from filename."""
+    match = re.search(r'(\d+)', filename)
+    if not match:
+        raise ValueError(f"No numeric ID found in filename: {filename}")
+    return int(match.group(1))
 
 def read_md_file(filename):
     """Read content from a markdown file in the clean folder"""
@@ -46,88 +82,51 @@ def read_md_file(filename):
         print(f"File {file_path} not found")
         return None
 
+# Initialize agent with tools instead of functions
 agent = Agent(
-    #model=model,
-    'gemini-2.0-flash-exp',
+    model=model,
+    #'gemini-1.5-pro',
     result_type=PatientData,
     system_prompt=f"""
-    Using this burn classification context:
+    Using these instructions and Portuguese medical glossary:
     
-    {BURN_CONTEXT}
+    {PATIENT_CONTEXT}
+    {PT_GLOSSARY}
     
-    Extract burn injury information from Portuguese medical notes into structured data.
-    
-    Important rules:
-    1. Burn Locations:
-       - Each location must include body part, burn depth, laterality (if applicable), and whether it's circumferential
-       - For arms/legs: create separate entries for left/right if bilateral
-       - Circumferential burns only apply to limbs and torso
-       - Use exact depth classifications from BurnDepth enum (first-degree, second-degree-superficial, etc.)
-    
-    2. Total Body Surface Area:
-       - Extract the percentage from ASCQ or ASC value
-       - Remove any ~ or % symbols and convert to float
-    
-    3. Burn Mechanism:
-       - Use exactly one mechanism from BurnMechanism enum
-       - For explosion/gas incidents, use THERMAL_FLAME
-       - Include specific agent (e.g., "gas") in etiologic_agent field
-    
-    Return data according to the BurnData model structure. For missing information:
-    - Use empty list for burn_locations if none found
-    - Use 0.0 for total_body_surface_area if not specified
-    - Use THERMAL_UNSPECIFIED for mechanism if unclear
-    - Use None for etiologic_agent if not mentioned
+    Extract the following information from the Portuguese text:
+    - The patient's gender (M/F).
+    - Date of birth of the patient in format dd-mm-yyyy.
+    - Process number.
+    - Full name of the patient.
+    - Location is where the patient lives, the address. Just return the city or region.
+    - Date of admission in the burns unit (UQ). In format dd-mm-yyyy.
+    - Origin of the patient, where the patient was transferred from - before being transfered to the burns unit.
+    - Date of discharge from the burns unit. In format dd-mm-yyyy.
+   
+    Return a complete PatientData object.
     """
 )
 
-def extract_burn_data(filename):
-    """Extract burn data from markdown file"""
-    md_content = read_md_file(filename)
-    if not md_content:
-        print("Error: No content read from file")
-        return None
-
+def extract_data(filename: str) -> Optional[PatientData]:
+    """Extract patient data from medical report."""
     try:
-        print("Sending request to OpenRouter API...")
+        patient_id = int(re.search(r'(\d+)', filename).group(1))
+        md_content = read_md_file(filename)
+        if not md_content:
+            return None
+        print("Sending request to API...")
         result = agent.run_sync(md_content)
-        
         if not result:
-            print("Error: No result returned from agent")
             return None
-            
-        if not result.data:
-            print("Error: No data in result")
-            return None
-            
-        # Validate the extracted data
-        burn_data = result.data
-        if not burn_data.burn_locations:
-            print("Warning: No burn locations extracted")
-        
-        print(f"Successfully extracted data with {len(burn_data.burn_locations)} burn locations")
-        return burn_data
-            
+        result.data.id_patient = patient_id
+        return result.data
     except Exception as e:
-        print(f"Extraction error: {str(e)}")
-        print("Full traceback:")
-        print(traceback.format_exc())
-        if "No endpoints found that support tool use" in str(e):
-            print("\nSuggestion: The selected model doesn't support function calling.")
-            print("Try using a different model like 'openai/gpt-3.5-turbo' or 'anthropic/claude-2'")
+        print(f"Error: {str(e)}")
+        traceback.print_exc()
         return None
 
 if __name__ == "__main__":
-    
-    # Construct path to test file
     file_path = project_root / "data" / "md-final" / "2301.md"
-    
-    if not file_path.exists():
-        print(f"Error: File not found at {file_path}")
-        exit(1)
-    else:
-        print(f"Extracting burn data from {file_path}")
-        
-    result = extract_burn_data(str(file_path))
+    result = extract_data(str(file_path))
     if result:
         print(result.model_dump_json(indent=2))

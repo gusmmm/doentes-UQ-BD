@@ -16,6 +16,9 @@ load_dotenv()
 with open(project_root / 'instructions' / 'burns-extraction.md', 'r') as f:
     BURN_CONTEXT = f.read()
 
+with open(project_root / 'instructions' / 'dicionario-PT.md', 'r') as f:
+    PT_GLOSSARY = f.read()
+
  # connect to openrouter API
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 if not OPENROUTER_API_KEY:
@@ -87,11 +90,16 @@ agent = Agent(
     'gemini-2.0-flash-exp',
     result_type=BurnData,
     system_prompt=f"""
-    Using this burn classification context:
+    Using this burn classification context and Portuguese medical glossary:
     
+    BURN CLASSIFICATION:
     {BURN_CONTEXT}
     
+    PORTUGUESE MEDICAL TERMS:
+    {PT_GLOSSARY}
+    
     Extract burn injury information from Portuguese medical notes into structured data.
+    Use the glossary to interpret medical terms, abbreviations, and expressions.
     
     Important rules:
     1. Burn Locations:
@@ -125,7 +133,7 @@ def extract_burn_data(filename):
         return None
 
     try:
-        print("Sending request to OpenRouter API...")
+        print("Sending request to API...")
         result = agent.run_sync(md_content)
         
         if not result:
