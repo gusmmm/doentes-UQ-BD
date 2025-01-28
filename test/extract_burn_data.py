@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 import traceback
 
-# Get project root directory (1 level up from test folder)
+# Get project root directory (2 levels up from test folder)
 project_root = Path(__file__).parent.parent
 
 # Load environment variables and context
@@ -27,7 +27,7 @@ model = OpenAIModel(
     base_url='https://openrouter.ai/api/v1',
     api_key=OPENROUTER_API_KEY,
 )
-
+# connect to gemini API
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found in environment variables")
