@@ -2,6 +2,17 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
+class PatientUpdateData(BaseModel):
+    gender: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    process_number: Optional[int] = None
+    full_name: Optional[str] = None
+    location: Optional[str] = None
+    date_of_admission_UQ: Optional[str] = None 
+    origin: Optional[str] = None
+    date_of_discharge: Optional[str] = None
+    destination: Optional[str] = None
+
 class PatientData(BaseModel):
     id_patient: int
     gender: Optional[str] = None
