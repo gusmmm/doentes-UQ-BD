@@ -61,4 +61,11 @@ PATIENT DATA EXTRACTION
     - If not found, set to None.
 
 
+# destination:
+    - after discharge from the UQ, the patient was transfered to the destination
+    - usually another department, unit or service within the hospital
+    - often transfer to another hospital
+    - can also de transfered to a recovery unit or home
+
+
 If contradictory data is found, return None.

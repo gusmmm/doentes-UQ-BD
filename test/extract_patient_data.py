@@ -24,8 +24,9 @@ if not OPENROUTER_API_KEY:
 
 
 model = OpenAIModel(
-    #'openai/gpt-4o-mini',  # This model supports function calling through OpenRouter
-    'anthropic/claude-3.5-haiku-20241022:beta',
+    #'deepseek/deepseek-r1-distill-llama-70b',
+    'openai/gpt-4o-mini',  # This model supports function calling through OpenRouter
+    #'anthropic/claude-3.5-haiku-20241022:beta',
     base_url='https://openrouter.ai/api/v1',
     api_key=OPENROUTER_API_KEY,
 )
@@ -52,16 +53,8 @@ class PatientData(BaseModel):
     date_of_admission_UQ: str | None = Field(default=None) # dd-mm-yyyy
     origin: str | None = Field(default=None)
     date_of_discharge: str | None = Field(default=None) # dd-mm-yyyy
-    # destination: str | None = Field(default=None)
-    
-    # @model_validator(mode='after')
-    # def validate_fields(self) -> 'PatientData':
-    #     if self.id_patient <= 0:
-    #         raise ValueError('Patient ID must be positive')
-    #     if self.process_number is not None and self.process_number <= 0:
-    #         raise ValueError('Process number must be positive')
-    #     return self
-
+    destination: str | None = Field(default=None)
+  
 # Define the tools/functions first
 def extract_patient_id(filename: str) -> int:
     """Extract numeric ID from filename."""
@@ -102,6 +95,7 @@ agent = Agent(
     - Date of admission in the burns unit (UQ). In format dd-mm-yyyy.
     - Origin of the patient, where the patient was transferred from - before being transfered to the burns unit.
     - Date of discharge from the burns unit. In format dd-mm-yyyy.
+    - Destination of the patient, where the patient was transferred to - after being discharged from the burns unit.
    
     Return a complete PatientData object.
     """
