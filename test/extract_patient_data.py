@@ -24,8 +24,9 @@ if not OPENROUTER_API_KEY:
 
 
 model = OpenAIModel(
+    'deepseek/deepseek-chat',
     #'deepseek/deepseek-r1-distill-llama-70b',
-    'openai/gpt-4o-mini',  # This model supports function calling through OpenRouter
+    #'openai/gpt-4o-mini',  # This model supports function calling through OpenRouter
     #'anthropic/claude-3.5-haiku-20241022:beta',
     base_url='https://openrouter.ai/api/v1',
     api_key=OPENROUTER_API_KEY,
