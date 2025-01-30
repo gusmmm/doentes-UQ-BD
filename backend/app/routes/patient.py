@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 
 from ..models.patient import PatientData, PatientUpdateData
 from ..config.db import conn
@@ -8,9 +8,7 @@ patient = APIRouter()
 
 @patient.get('/')
 async def find_all_patients():
-    print(conn.local.patient.find())
-    print(patientDataListEntity(conn.local.patient.find()))
-    return patientDataListEntity(conn.local.patient.find())  # conn.patients is the collection
+    return patientDataListEntity(conn.local.patient.find())
 
 @patient.put('/{id_patient}')
 async def update_patient(id_patient: int, update_data: PatientUpdateData):
@@ -22,7 +20,7 @@ async def update_patient(id_patient: int, update_data: PatientUpdateData):
 
     # Find and update the patient
     result = conn.local.patient.update_one(
-        {"id_patient": id_patient},
+        {"_id": id_patient},
         {"$set": update_dict}
     )
 
@@ -30,7 +28,7 @@ async def update_patient(id_patient: int, update_data: PatientUpdateData):
         raise HTTPException(status_code=404, detail=f"Patient with id_patient {id_patient} not found")
 
     # Return the updated patient
-    updated_patient = conn.local.patient.find_one({"id_patient": id_patient})
+    updated_patient = conn.local.patient.find_one({"_id": id_patient})
     if updated_patient:
         return patientDataEntity(updated_patient)
     
@@ -38,7 +36,7 @@ async def update_patient(id_patient: int, update_data: PatientUpdateData):
 
 @patient.delete('/{id_patient}')
 async def delete_patient(id_patient: int):
-    result = conn.local.patient.delete_one({"id_patient": id_patient})
+    result = conn.local.patient.delete_one({"_id": id_patient})
     
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail=f"Patient with id_patient {id_patient} not found")
@@ -46,14 +44,36 @@ async def delete_patient(id_patient: int):
     return {"message": f"Patient with id_patient {id_patient} successfully deleted"}
 
 @patient.post('/')
-async def create_patient(patient: PatientData):
-    # Check if patient with same id_patient already exists
-    existing_patient = conn.local.patient.find_one({"id_patient": patient.id_patient})
-    if existing_patient:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Patient with id_patient {patient.id_patient} already exists"
-        )
+async def create_patient(
+    patient: PatientData = Body(
+        ...,
+        description="Patient data including required id_patient which will be used as the unique identifier",
+        example={
+            "id_patient": 2301,
+            "gender": "M",
+            "date_of_birth": "01-01-1970",
+            "process_number": 12345,
+            "full_name": "John Doe",
+            "location": "Porto",
+            "date_of_admission_UQ": "01-01-2023",
+            "origin": "Hospital São João",
+            "date_of_discharge": "15-01-2023",
+            "destination": "Home"
+        }
+    )
+):
+    # Convert patient to dict, set _id, and remove id_patient
+    patient_dict = dict(patient)
+    patient_dict['_id'] = patient_dict.pop('id_patient')
     
-    conn.local.patient.insert_one(dict(patient))
-    return patientDataEntity(conn.local.patient.find_one({"id_patient": patient.id_patient}))
+    try:
+        conn.local.patient.insert_one(patient_dict)
+    except Exception as e:
+        if 'duplicate key error' in str(e):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Patient with id_patient {patient.id_patient} already exists"
+            )
+        raise e
+    
+    return patientDataEntity(conn.local.patient.find_one({"_id": patient.id_patient}))

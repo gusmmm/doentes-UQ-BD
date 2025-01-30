@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional
 
@@ -14,7 +14,12 @@ class PatientUpdateData(BaseModel):
     destination: Optional[str] = None
 
 class PatientData(BaseModel):
-    id_patient: int
+    id_patient: int = Field(
+        ...,
+        title="Patient ID",
+        description="Required. A unique identifier for the patient that will be used as the primary key.",
+        examples=[2301, 2302, 2303]
+    )
     gender: Optional[str] = None
     date_of_birth: Optional[str] = None
     process_number: Optional[int] = None
@@ -27,7 +32,7 @@ class PatientData(BaseModel):
     
     class Config:
         collection = "patients"
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id_patient": 2301,
                 "gender": "M",

@@ -1,17 +1,9 @@
 def patientDataEntity(item) -> dict:
-    return {
-        "id": str(item["_id"]),
-        "id_patient": item["id_patient"],
-        "gender": item["gender"],
-        "date_of_birth": item["date_of_birth"],
-        "process_number": item["process_number"],
-        "full_name": item["full_name"],
-        "location": item["location"],
-        "date_of_admission_UQ": item["date_of_admission_UQ"],
-        "origin": item["origin"],
-        "date_of_discharge": item["date_of_discharge"],
-        "destination": item["destination"]
-    }
+    # Map _id to id_patient and include all other fields except _id
+    result = {"id_patient": item["_id"]}
+    # Add all other fields except _id
+    result.update({k: v for k, v in item.items() if k != '_id'})
+    return result
 
 def patientDataListEntity(entity) -> list:
     return [patientDataEntity(item) for item in entity]
