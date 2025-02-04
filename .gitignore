@@ -45,3 +45,4 @@ data/md-final/*
 !data/md-merged/
 data/md-merged/*
 !data/md-merged/.gitkeep
+data/json/*
