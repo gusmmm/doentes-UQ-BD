@@ -62,8 +62,8 @@ class MedicalHistoryExtractor(BaseExtractor):
 
             self.model = OpenAIModel(
                 #'deepseek/deepseek-chat',
-                #'openai/gpt-4o-mini',
-                'anthropic/claude-3.5-haiku',
+                'openai/gpt-4o-mini',
+                #'anthropic/claude-3.5-haiku',
                 #'google/gemini-2.0-flash-001',
                 base_url='https://openrouter.ai/api/v1',
                 api_key=openrouter_api_key,

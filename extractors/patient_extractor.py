@@ -53,8 +53,8 @@ class PatientDataExtractor(BaseExtractor):
                             
             self.model = OpenAIModel(
                 #'deepseek/deepseek-chat',
-                'anthropic/claude-3.5-haiku',
-                #'openai/gpt-4o-mini',  # Using same model as burn extractor for consistency
+                #'anthropic/claude-3.5-haiku',
+                'openai/gpt-4o-mini',  # Using same model as burn extractor for consistency
                 base_url='https://openrouter.ai/api/v1',
                 api_key=openrouter_api_key,
             )

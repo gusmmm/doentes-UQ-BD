@@ -23,12 +23,19 @@ with open(project_root / 'instructions' / 'dicionario-PT.md', 'r') as f:
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 if not OPENROUTER_API_KEY:
     raise ValueError("OPENROUTER_API_KEY not found in environment variables")
+# connect to novita ai API
+NOVITA_API_KEY = os.getenv('NOVITA_API_KEY')
+if not NOVITA_API_KEY:
+    raise ValueError("NOVITA_API_KEY not found in environment variables")
+
 
 
 model = OpenAIModel(
     'openai/gpt-4o-mini',  # This model supports function calling through OpenRouter
     base_url='https://openrouter.ai/api/v1',
+    #base_url='https://api.novita.ai/v3/openai', #novita ai
     api_key=OPENROUTER_API_KEY,
+    #api_key=NOVITA_API_KEY, #novita ai
 )
 # connect to gemini API
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
@@ -86,8 +93,8 @@ def read_md_file(filename):
         return None
 
 agent = Agent(
-    #model=model,
-    'gemini-2.0-flash-001',
+    model=model,
+    #'gemini-2.0-flash-001',
     result_type=BurnData,
     system_prompt=f"""
     Using this burn classification context and Portuguese medical glossary:
