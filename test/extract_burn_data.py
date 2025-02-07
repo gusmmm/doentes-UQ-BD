@@ -86,8 +86,8 @@ def read_md_file(filename):
         return None
 
 agent = Agent(
-    model=model,
-    #'gemini-2.0-flash-exp',
+    #model=model,
+    'gemini-2.0-flash-001',
     result_type=BurnData,
     system_prompt=f"""
     Using this burn classification context and Portuguese medical glossary:

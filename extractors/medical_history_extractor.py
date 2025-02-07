@@ -54,17 +54,25 @@ class MedicalHistoryExtractor(BaseExtractor):
             openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
             if not openrouter_api_key:
                 raise ValueError("OPENROUTER_API_KEY not found")
+            
+             # connect to gemini API
+            GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+            if not GEMINI_API_KEY:
+                raise ValueError("GEMINI_API_KEY not found in environment variables")
 
             self.model = OpenAIModel(
                 #'deepseek/deepseek-chat',
                 #'openai/gpt-4o-mini',
                 'anthropic/claude-3.5-haiku',
+                #'google/gemini-2.0-flash-001',
                 base_url='https://openrouter.ai/api/v1',
                 api_key=openrouter_api_key,
             )
+            print("Initialized OpenRouter API client")
 
             self.agent = Agent(
                 model=self.model,
+                #'gemini-2.0-flash-001',
                 result_type=MedicalHistory,
                 system_prompt=f"""
                 Using these instructions and Portuguese medical glossary:
