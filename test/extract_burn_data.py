@@ -31,7 +31,8 @@ if not NOVITA_API_KEY:
 
 
 model = OpenAIModel(
-    'openai/gpt-4o-mini',  # This model supports function calling through OpenRouter
+    #'openai/gpt-4o-mini',  # This model supports function calling through OpenRouter
+    'deepseek/deepseek-chat',
     base_url='https://openrouter.ai/api/v1',
     #base_url='https://api.novita.ai/v3/openai', #novita ai
     api_key=OPENROUTER_API_KEY,

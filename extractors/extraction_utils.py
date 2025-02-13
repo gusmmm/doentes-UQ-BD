@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
+from rich.console import Console
+from rich.progress import Progress
 
 from .patient_extractor import PatientDataExtractor, PatientData
 from .burn_extractor import BurnDataExtractor, BurnData
@@ -109,30 +111,40 @@ def create_mongo_document(patient_data: PatientData, burn_data: BurnData, medica
 def extract_and_format_data(filename: str | Path, project_root: Path) -> Optional[dict]:
     """Extract data from markdown file and format it for MongoDB."""
     try:
-        # Extract patient data
-        patient_extractor = PatientDataExtractor(project_root)
-        patient_data = patient_extractor.extract(filename)
-        if not patient_data:
-            print("Failed to extract patient data")
-            return None
+        console = Console()
+        
+        with Progress(console=console) as progress:
+            # Extract patient data
+            task1 = progress.add_task("[cyan]Extracting patient data...", total=None)
+            patient_extractor = PatientDataExtractor(project_root)
+            patient_data = patient_extractor.extract(filename)
+            progress.remove_task(task1)
             
-        # Extract burn data
-        burn_extractor = BurnDataExtractor(project_root)
-        burn_data = burn_extractor.extract(filename)
-        if not burn_data:
-            print("Failed to extract burn data")
-            return None
+            if not patient_data:
+                console.print("[red]Failed to extract patient data[/red]")
+                return None
+                
+            # Extract burn data
+            task2 = progress.add_task("[magenta]Extracting burn data...", total=None)
+            burn_extractor = BurnDataExtractor(project_root)
+            burn_data = burn_extractor.extract(filename)
+            progress.remove_task(task2)
             
-        # Extract medical history
-        medical_extractor = MedicalHistoryExtractor(project_root)
-        medical_history = medical_extractor.extract(filename)
-        if not medical_history:
-            print("Warning: No medical history extracted")
+            if not burn_data:
+                console.print("[red]Failed to extract burn data[/red]")
+                return None
+                
+            # Extract medical history
+            task3 = progress.add_task("[yellow]Extracting medical history...", total=None)
+            medical_extractor = MedicalHistoryExtractor(project_root)
+            medical_history = medical_extractor.extract(filename)
+            progress.remove_task(task3)
             
-        # Create MongoDB document
-        mongo_doc = create_mongo_document(patient_data, burn_data, medical_history)
-        return mongo_doc
+            if not medical_history:
+                console.print("[yellow]Warning: No medical history extracted[/yellow]")
+        
+        return create_mongo_document(patient_data, burn_data, medical_history)
         
     except Exception as e:
-        print(f"Error in data extraction and formatting: {str(e)}")
+        console.print(f"[red]Error in data extraction: {str(e)}[/red]")
         return None

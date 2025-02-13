@@ -338,6 +338,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "pydantic-ai", extra = ["logfire"] },
     { name = "pymongo" },
+    { name = "rich" },
     { name = "uvicorn" },
 ]
 
@@ -347,6 +348,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115.7" },
     { name = "pydantic-ai", extras = ["logfire"], specifier = ">=0.0.20" },
     { name = "pymongo", specifier = ">=4.10.1" },
+    { name = "rich", specifier = ">=13.9.4" },
     { name = "uvicorn", specifier = ">=0.34.0" },
 ]
 

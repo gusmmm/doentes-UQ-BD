@@ -25,7 +25,7 @@ class PatientData(BaseModel):
     
 class PatientDataExtractor(BaseExtractor):
     def __init__(self, project_root: Path):
-        super().__init__(project_root)
+        super().__init__(project_root, "patient")
         
         try:
             # Load context files
@@ -50,20 +50,12 @@ class PatientDataExtractor(BaseExtractor):
             GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
             if not GEMINI_API_KEY:
                 raise ValueError("GEMINI_API_KEY not found in environment variables")
-                            
-            self.model = OpenAIModel(
-                #'deepseek/deepseek-chat',
-                #'anthropic/claude-3.5-haiku',
-                'openai/gpt-4o-mini',  # Using same model as burn extractor for consistency
-                base_url='https://openrouter.ai/api/v1',
-                api_key=openrouter_api_key,
-            )
+                 
             print("Initialized OpenRouter API client")
             
             # Initialize extraction agent
             self.agent = Agent(
                 model=self.model,
-                #'gemini-2.0-flash-001',
                 result_type=PatientData,
                 system_prompt=f"""
                 Using these instructions and Portuguese medical glossary:
